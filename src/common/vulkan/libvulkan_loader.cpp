@@ -25,8 +25,8 @@ void *OpenLibVulkan()
         "libvulkan.1.dylib",
         "libMoltenVK.dylib"
 #else
-        "libvulkan.so",
-        "libvulkan.so.1",
+        "libvulkan_override.so",
+        "libvulkan_override.so.1",
 #endif
     };
 
