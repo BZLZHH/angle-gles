@@ -1054,111 +1054,162 @@ void Display::setupDisplayPlatform(rx::DisplayImpl *impl)
 
 Error Display::initialize()
 {
+    printf("Display::initialize 1\n");
     mTerminatedByApi = false;
+    printf("Display::initialize 2\n");
 
     ASSERT(mImplementation != nullptr);
+    printf("Display::initialize 3\n");
     mImplementation->setBlobCache(&mBlobCache);
+    printf("Display::initialize 4\n");
 
     // Enable shader caching if debug layers are turned on. This allows us to test that shaders are
     // properly saved & restored on all platforms. The cache won't allocate space until it's used
     // and will be ignored entirely if the application / system sets it's own cache functions.
     if (rx::ShouldUseDebugLayers(mAttributeMap))
     {
+        printf("Display::initialize 5\n");
         mBlobCache.resize(1024 * 1024);
     }
+    printf("Display::initialize 6\n");
 
     setGlobalDebugAnnotator();
+    printf("Display::initialize 7\n");
 
     gl::InitializeDebugMutexIfNeeded();
+    printf("Display::initialize 8\n");
 
     ANGLE_TRACE_EVENT0("gpu.angle", "egl::Display::initialize");
+    printf("Display::initialize 9\n");
 
     if (isInitialized())
     {
+        printf("Display::initialize 10\n");
         return NoError();
     }
 
     Error error = mImplementation->initialize(this);
+    printf("Display::initialize 11\n");
     if (error.isError())
     {
+        printf("Display::initialize 12\n");
         // Log extended error message here
         ERR() << "ANGLE Display::initialize error " << error.getID() << ": " << error.getMessage();
         return error;
     }
 
+    printf("Display::initialize 13\n");
     mCaps = mImplementation->getCaps();
+    printf("Display::initialize 14\n");
 
     mConfigSet = mImplementation->generateConfigs();
+    printf("Display::initialize 15\n");
     if (mConfigSet.size() == 0)
     {
+        printf("Display::initialize 16\n");
         mImplementation->terminate();
+        printf("Display::initialize 17\n");
         return egl::Error(EGL_NOT_INITIALIZED, "No configs were generated.");
     }
 
+    printf("Display::initialize 18\n");
     // OpenGL ES1 is implemented in the frontend, explicitly add ES1 support to all configs
     for (auto &config : mConfigSet)
     {
         // TODO(geofflang): Enable the conformant bit once we pass enough tests
         // config.second.conformant |= EGL_OPENGL_ES_BIT;
 
+        printf("Display::initialize 19\n");
         config.second.renderableType |= EGL_OPENGL_ES_BIT;
     }
 
+    printf("Display::initialize 20\n");
     mFrontendFeatures.reset();
+    printf("Display::initialize 21\n");
     rx::ApplyFeatureOverrides(&mFrontendFeatures, mState.featureOverrides);
+    printf("Display::initialize 22\n");
     if (!mState.featureOverrides.allDisabled)
     {
+        printf("Display::initialize 23\n");
         initializeFrontendFeatures();
     }
+    printf("Display::initialize 24\n");
 
     mFeatures.clear();
+    printf("Display::initialize 25\n");
     mFrontendFeatures.populateFeatureList(&mFeatures);
+    printf("Display::initialize 26\n");
     mImplementation->populateFeatureList(&mFeatures);
+    printf("Display::initialize 27\n");
 
     initDisplayExtensions();
+    printf("Display::initialize 28\n");
     initVendorString();
+    printf("Display::initialize 29\n");
     initVersionString();
+    printf("Display::initialize 30\n");
     initClientAPIString();
+    printf("Display::initialize 31\n");
 
     // Populate the Display's EGLDeviceEXT if the Display wasn't created using one
     if (mPlatform == EGL_PLATFORM_DEVICE_EXT)
     {
+        printf("Display::initialize 32\n");
         // For EGL_PLATFORM_DEVICE_EXT, mDevice should always be populated using
         // an external device
         ASSERT(mDevice != nullptr);
     }
     else if (GetClientExtensions().deviceQueryEXT)
     {
+        printf("Display::initialize 33\n");
         std::unique_ptr<rx::DeviceImpl> impl(mImplementation->createDevice());
+        printf("Display::initialize 34\n");
         ASSERT(impl);
+        printf("Display::initialize 35\n");
         error = impl->initialize();
+        printf("Display::initialize 36\n");
         if (error.isError())
         {
+            printf("Display::initialize 37\n");
             ERR() << "Failed to initialize display because device creation failed: "
                   << error.getMessage();
+            printf("Display::initialize 38\n");
             mImplementation->terminate();
+            printf("Display::initialize 39\n");
             return error;
         }
         // Don't leak Device memory.
+        printf("Display::initialize 40\n");
         ASSERT(mDevice == nullptr);
+        printf("Display::initialize 41\n");
         mDevice = new Device(this, impl.release());
+        printf("Display::initialize 42\n");
     }
     else
     {
+        printf("Display::initialize 43\n");
         mDevice = nullptr;
     }
 
     mState.singleThreadPool = angle::WorkerThreadPool::Create(1, ANGLEPlatformCurrent());
+    printf("Display::initialize 44\n");
     mState.multiThreadPool  = angle::WorkerThreadPool::Create(0, ANGLEPlatformCurrent());
+    printf("Display::initialize 45\n");
 
     if (kIsContextMutexEnabled)
     {
+        printf("Display::initialize 46\n");
         ASSERT(mManagersMutex == nullptr);
+        printf("Display::initialize 47\n");
         mManagersMutex = new ContextMutex();
+        printf("Display::initialize 48\n");
         mManagersMutex->addRef();
+        printf("Display::initialize 49\n");
     }
+    printf("Display::initialize 50\n");
 
     mInitialized = true;
+    printf("Display::initialize 51\n");
 
     return NoError();
 }
