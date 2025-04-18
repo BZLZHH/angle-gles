@@ -166,33 +166,56 @@ DisplayVk::~DisplayVk()
 egl::Error DisplayVk::initialize(egl::Display *display)
 {
     ASSERT(mRenderer != nullptr && display != nullptr);
+    printf("a\n");
+
     const egl::AttributeMap &attribs = display->getAttributeMap();
+    printf("b\n");
 
     const vk::UseDebugLayers useDebugLayers = ShouldLoadDebugLayers(attribs);
-    const angle::vk::ICD desiredICD         = ChooseICDFromAttribs(attribs);
+    printf("c\n");
+
+    const angle::vk::ICD desiredICD = ChooseICDFromAttribs(attribs);
+    printf("d\n");
+
     const uint32_t preferredVendorId =
         static_cast<uint32_t>(attribs.get(EGL_PLATFORM_ANGLE_DEVICE_ID_HIGH_ANGLE, 0));
+    printf("e\n");
+
     const uint32_t preferredDeviceId =
         static_cast<uint32_t>(attribs.get(EGL_PLATFORM_ANGLE_DEVICE_ID_LOW_ANGLE, 0));
+    printf("f\n");
+
     const uint8_t *preferredDeviceUuid = reinterpret_cast<const uint8_t *>(
         attribs.get(EGL_PLATFORM_ANGLE_VULKAN_DEVICE_UUID_ANGLE, 0));
+    printf("g\n");
+
     const uint8_t *preferredDriverUuid = reinterpret_cast<const uint8_t *>(
         attribs.get(EGL_PLATFORM_ANGLE_VULKAN_DRIVER_UUID_ANGLE, 0));
+    printf("h\n");
+
     const VkDriverId preferredDriverId =
         static_cast<VkDriverId>(attribs.get(EGL_PLATFORM_ANGLE_VULKAN_DRIVER_ID_ANGLE, 0));
+    printf("i\n");
 
     angle::Result result = mRenderer->initialize(
         this, this, desiredICD, preferredVendorId, preferredDeviceId, preferredDeviceUuid,
         preferredDriverUuid, preferredDriverId, useDebugLayers, getWSIExtension(), getWSILayer(),
         getWindowSystem(), mState.featureOverrides);
+    printf("j\n");
+
     ANGLE_TRY(angle::ToEGL(result, EGL_NOT_INITIALIZED));
+    printf("k\n");
 
     mDeviceQueueIndex = mRenderer->getDeviceQueueIndex(egl::ContextPriority::Medium);
+    printf("l\n");
 
     InstallDebugAnnotator(display, mRenderer);
+    printf("m\n");
 
     // Query and cache supported surface format and colorspace for later use.
     initSupportedSurfaceFormatColorspaces();
+    printf("n\n");
+
     return egl::NoError();
 }
 
