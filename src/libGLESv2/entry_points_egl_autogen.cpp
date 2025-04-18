@@ -561,36 +561,50 @@ __eglMustCastToProperFunctionPointerType EGLAPIENTRY EGL_GetProcAddress(const ch
 
 EGLBoolean EGLAPIENTRY EGL_Initialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
 {
-
+printf("a");
     Thread *thread = egl::GetCurrentThread();
+  printf("b");
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
+printf("c");
+
     EGLBoolean returnValue;
     {
         ANGLE_SCOPED_GLOBAL_EGL_AND_EGL_SYNC_LOCK();
+printf("d");
+
         EGL_EVENT(Initialize,
                   "dpy = 0x%016" PRIxPTR ", major = 0x%016" PRIxPTR ", minor = 0x%016" PRIxPTR "",
                   (uintptr_t)dpy, (uintptr_t)major, (uintptr_t)minor);
-
+printf("e");
         egl::Display *dpyPacked = PackParam<egl::Display *>(dpy);
-
+printf("f");
         {
             ANGLE_EGL_SCOPED_CONTEXT_LOCK(Initialize, thread, dpyPacked);
-            if (IsEGLValidationEnabled())
+            printf("g");
+          if (IsEGLValidationEnabled())
             {
+printf("h");
                 ANGLE_EGL_VALIDATE(thread, Initialize, GetDisplayIfValid(dpyPacked), EGLBoolean,
                                    dpyPacked, major, minor);
-            }
+           printf("i");
+ }
             else
             {
+printf("j");
             }
-
+printf("k");
             returnValue = Initialize(thread, dpyPacked, major, minor);
-        }
+printf("l");
 
+        }
+printf("m");
         ANGLE_CAPTURE_EGL(Initialize, true, thread, dpyPacked, major, minor, returnValue);
-    }
+   printf("n");
+ }
+printf("o");
     ASSERT(!egl::Display::GetCurrentThreadUnlockedTailCall()->any());
-    return returnValue;
+   printf("p");
+ return returnValue;
 }
 
 EGLBoolean EGLAPIENTRY EGL_MakeCurrent(EGLDisplay dpy,
