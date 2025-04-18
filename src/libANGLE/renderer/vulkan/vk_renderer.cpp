@@ -2170,61 +2170,72 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
                                    const angle::FeatureOverrides &featureOverrides)
 {
     bool canLoadDebugUtils = true;
+    printf("1\n");
 #if defined(ANGLE_SHARED_LIBVULKAN)
     {
         ANGLE_SCOPED_DISABLE_MSAN();
         mLibVulkanLibrary = angle::vk::OpenLibVulkan();
+        printf("2\n");
         ANGLE_VK_CHECK(context, mLibVulkanLibrary, VK_ERROR_INITIALIZATION_FAILED);
+        printf("3\n");
 
         PFN_vkGetInstanceProcAddr vulkanLoaderGetInstanceProcAddr =
             reinterpret_cast<PFN_vkGetInstanceProcAddr>(
                 angle::GetLibrarySymbol(mLibVulkanLibrary, "vkGetInstanceProcAddr"));
+        printf("4\n");
 
-        // Set all vk* function ptrs
         volkInitializeCustom(vulkanLoaderGetInstanceProcAddr);
+        printf("5\n");
 
         uint32_t ver = volkGetInstanceVersion();
+        printf("6\n");
         if (!IsAndroid() && ver < VK_MAKE_VERSION(1, 1, 91))
         {
-            // http://crbug.com/1205999 - non-Android Vulkan Loader versions before 1.1.91 have a
-            // bug which prevents loading VK_EXT_debug_utils function pointers.
             canLoadDebugUtils = false;
+            printf("7\n");
         }
     }
 #endif  // defined(ANGLE_SHARED_LIBVULKAN)
 
     mGlobalOps = globalOps;
+    printf("8\n");
 
-    // While the validation layer is loaded by default whenever present, apidump layer
-    // activation is controlled by an environment variable/android property allowing
-    // the two layers to be controlled independently.
     bool enableApiDumpLayer =
-        kEnableVulkanAPIDumpLayer && angle::GetEnvironmentVarOrAndroidProperty(
-                                         "ANGLE_ENABLE_VULKAN_API_DUMP_LAYER",
-                                         "debug.angle.enable_vulkan_api_dump_layer") == "1";
+            kEnableVulkanAPIDumpLayer && angle::GetEnvironmentVarOrAndroidProperty(
+                    "ANGLE_ENABLE_VULKAN_API_DUMP_LAYER",
+                    "debug.angle.enable_vulkan_api_dump_layer") == "1";
+    printf("9\n");
 
     bool loadLayers = (useDebugLayers != UseDebugLayers::No) || enableApiDumpLayer;
+    printf("10\n");
     angle::vk::ScopedVkLoaderEnvironment scopedEnvironment(loadLayers, desiredICD);
+    printf("11\n");
     bool debugLayersLoaded  = scopedEnvironment.canEnableDebugLayers();
+    printf("12\n");
     mEnableValidationLayers = debugLayersLoaded;
+    printf("13\n");
     enableApiDumpLayer      = enableApiDumpLayer && debugLayersLoaded;
+    printf("14\n");
     mEnabledICD             = scopedEnvironment.getEnabledICD();
+    printf("15\n");
 
-    // Gather global layer properties.
     uint32_t instanceLayerCount = 0;
     {
         ANGLE_SCOPED_DISABLE_LSAN();
         ANGLE_SCOPED_DISABLE_MSAN();
         ANGLE_VK_TRY(context, vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr));
+        printf("16\n");
     }
 
     std::vector<VkLayerProperties> instanceLayerProps(instanceLayerCount);
+    printf("17\n");
     if (instanceLayerCount > 0)
     {
         ANGLE_SCOPED_DISABLE_LSAN();
         ANGLE_SCOPED_DISABLE_MSAN();
         ANGLE_VK_TRY(context, vkEnumerateInstanceLayerProperties(&instanceLayerCount,
                                                                  instanceLayerProps.data()));
+        printf("18\n");
     }
 
     VulkanLayerVector enabledInstanceLayerNames;
@@ -2232,54 +2243,64 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
     if (enableApiDumpLayer)
     {
         enabledInstanceLayerNames.push_back("VK_LAYER_LUNARG_api_dump");
+        printf("19\n");
     }
 
     if (mEnableValidationLayers)
     {
         const bool layersRequested = useDebugLayers == UseDebugLayers::Yes;
+        printf("20\n");
         mEnableValidationLayers = GetAvailableValidationLayers(instanceLayerProps, layersRequested,
                                                                &enabledInstanceLayerNames);
+        printf("21\n");
     }
 
     if (wsiLayer != nullptr)
     {
         enabledInstanceLayerNames.push_back(wsiLayer);
+        printf("22\n");
     }
 
     auto enumerateInstanceVersion = reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
-        vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
+            vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion"));
+    printf("23\n");
 
     uint32_t highestApiVersion = mInstanceVersion = VK_API_VERSION_1_0;
+    printf("24\n");
     if (enumerateInstanceVersion)
     {
         {
             ANGLE_SCOPED_DISABLE_LSAN();
             ANGLE_SCOPED_DISABLE_MSAN();
             ANGLE_VK_TRY(context, enumerateInstanceVersion(&mInstanceVersion));
+            printf("25\n");
         }
 
         if (IsVulkan11(mInstanceVersion))
         {
-            // This is the highest version of core Vulkan functionality that ANGLE uses.  Per the
-            // Vulkan spec, the application is allowed to specify a higher version than supported by
-            // the instance.  ANGLE still respects the *device's* version.
             highestApiVersion = kPreferredVulkanAPIVersion;
+            printf("26\n");
         }
     }
 
     if (mInstanceVersion < angle::vk::kMinimumVulkanAPIVersion)
     {
         WARN() << "ANGLE Requires a minimum Vulkan instance version of 1.1";
+        printf("27\n");
         ANGLE_VK_TRY(context, VK_ERROR_INCOMPATIBLE_DRIVER);
+        printf("28\n");
     }
 
     const UseVulkanSwapchain useVulkanSwapchain = wsiExtension != nullptr || wsiLayer != nullptr
-                                                      ? UseVulkanSwapchain::Yes
-                                                      : UseVulkanSwapchain::No;
+                                                  ? UseVulkanSwapchain::Yes
+                                                  : UseVulkanSwapchain::No;
+    printf("29\n");
     ANGLE_TRY(enableInstanceExtensions(context, enabledInstanceLayerNames, wsiExtension,
                                        useVulkanSwapchain, canLoadDebugUtils));
+    printf("30\n");
 
     const std::string appName = angle::GetExecutableName();
+    printf("31\n");
 
     mApplicationInfo                    = {};
     mApplicationInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -2288,89 +2309,85 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
     mApplicationInfo.pEngineName        = "ANGLE";
     mApplicationInfo.engineVersion      = 1;
     mApplicationInfo.apiVersion         = highestApiVersion;
+    printf("32\n");
 
     VkInstanceCreateInfo instanceInfo = {};
     instanceInfo.sType                = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.flags                = 0;
     instanceInfo.pApplicationInfo     = &mApplicationInfo;
+    printf("33\n");
 
-    // Enable requested layers and extensions.
     instanceInfo.enabledExtensionCount = static_cast<uint32_t>(mEnabledInstanceExtensions.size());
     instanceInfo.ppEnabledExtensionNames =
-        mEnabledInstanceExtensions.empty() ? nullptr : mEnabledInstanceExtensions.data();
+            mEnabledInstanceExtensions.empty() ? nullptr : mEnabledInstanceExtensions.data();
+    printf("34\n");
 
     instanceInfo.enabledLayerCount   = static_cast<uint32_t>(enabledInstanceLayerNames.size());
     instanceInfo.ppEnabledLayerNames = enabledInstanceLayerNames.data();
+    printf("35\n");
 
-    // On macOS, there is no native Vulkan driver, so we need to enable the
-    // portability enumeration extension to allow use of MoltenVK.
     if (mFeatures.enablePortabilityEnumeration.enabled)
     {
         instanceInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        printf("36\n");
     }
 
-    // Fine grain control of validation layer features
     const char *name                     = "VK_LAYER_KHRONOS_validation";
     const VkBool32 setting_validate_core = VK_TRUE;
-    // SyncVal is very slow (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7285)
-    // for VkEvent which causes a few tests fail on the bots. Disable syncVal if VkEvent is enabled
-    // for now.
     const VkBool32 setting_validate_sync = IsAndroid() ? VK_FALSE : VK_TRUE;
     const VkBool32 setting_thread_safety = VK_TRUE;
-    // http://anglebug.com/42265520 - Shader validation caching is broken on Android
     const VkBool32 setting_check_shaders = IsAndroid() ? VK_FALSE : VK_TRUE;
-    // http://b/316013423 Disable QueueSubmit Synchronization Validation. Lots of failures and some
-    // test timeout due to https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7285
     const VkBool32 setting_syncval_submit_time_validation   = VK_FALSE;
     const VkBool32 setting_syncval_message_extra_properties = VK_TRUE;
     const VkLayerSettingEXT layerSettings[]                 = {
-        {name, "validate_core", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_validate_core},
-        {name, "validate_sync", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_validate_sync},
-        {name, "thread_safety", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_thread_safety},
-        {name, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_check_shaders},
-        {name, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                         &setting_syncval_submit_time_validation},
-        {name, "syncval_message_extra_properties", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                         &setting_syncval_message_extra_properties},
+            {name, "validate_core", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_validate_core},
+            {name, "validate_sync", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_validate_sync},
+            {name, "thread_safety", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_thread_safety},
+            {name, "check_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &setting_check_shaders},
+            {name, "syncval_submit_time_validation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                                         &setting_syncval_submit_time_validation},
+            {name, "syncval_message_extra_properties", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
+                                                                         &setting_syncval_message_extra_properties},
     };
     VkLayerSettingsCreateInfoEXT layerSettingsCreateInfo = {
-        VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
-        static_cast<uint32_t>(std::size(layerSettings)), layerSettings};
+            VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr,
+            static_cast<uint32_t>(std::size(layerSettings)), layerSettings};
     if (mEnableValidationLayers)
     {
         vk::AddToPNextChain(&instanceInfo, &layerSettingsCreateInfo);
+        printf("37\n");
     }
 
     {
         ANGLE_SCOPED_DISABLE_MSAN();
         ANGLE_VK_TRY(context, vkCreateInstance(&instanceInfo, nullptr, &mInstance));
+        printf("38\n");
 #if defined(ANGLE_SHARED_LIBVULKAN)
-        // Load volk if we are linking dynamically
         volkLoadInstance(mInstance);
-#endif  // defined(ANGLE_SHARED_LIBVULKAN)
+        printf("39\n");
+#endif
 
-        // For promoted extensions, initialize their entry points from the core version.
         initializeInstanceExtensionEntryPointsFromCore();
+        printf("40\n");
     }
 
     if (mEnableDebugUtils)
     {
-        // Use the newer EXT_debug_utils if it exists.
 #if !defined(ANGLE_SHARED_LIBVULKAN)
         InitDebugUtilsEXTFunctions(mInstance);
-#endif  // !defined(ANGLE_SHARED_LIBVULKAN)
+        printf("41\n");
+#endif
 
-        // Create the messenger callback.
         VkDebugUtilsMessengerCreateInfoEXT messengerInfo = {};
 
         constexpr VkDebugUtilsMessageSeverityFlagsEXT kSeveritiesToLog =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
 
         constexpr VkDebugUtilsMessageTypeFlagsEXT kMessagesToLog =
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+                VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
         messengerInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         messengerInfo.messageSeverity = kSeveritiesToLog;
@@ -2380,110 +2397,124 @@ angle::Result Renderer::initialize(vk::ErrorContext *context,
 
         ANGLE_VK_TRY(context, vkCreateDebugUtilsMessengerEXT(mInstance, &messengerInfo, nullptr,
                                                              &mDebugUtilsMessenger));
+        printf("42\n");
     }
 
     uint32_t physicalDeviceCount = 0;
     ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount, nullptr));
+    printf("43\n");
     ANGLE_VK_CHECK(context, physicalDeviceCount > 0, VK_ERROR_INITIALIZATION_FAILED);
+    printf("44\n");
 
     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
+    printf("45\n");
     ANGLE_VK_TRY(context, vkEnumeratePhysicalDevices(mInstance, &physicalDeviceCount,
                                                      physicalDevices.data()));
+    printf("46\n");
     ChoosePhysicalDevice(vkGetPhysicalDeviceProperties2, physicalDevices, mEnabledICD,
                          preferredVendorId, preferredDeviceId, preferredDeviceUuid,
                          preferredDriverUuid, preferredDriverId, &mPhysicalDevice,
                          &mPhysicalDeviceProperties2, &mPhysicalDeviceIDProperties,
                          &mDriverProperties);
+    printf("47\n");
 
-    // The device version that is assumed by ANGLE is the minimum of the actual device version and
-    // the highest it's allowed to use.
     mDeviceVersion = std::min(mPhysicalDeviceProperties.apiVersion, highestApiVersion);
+    printf("48\n");
 
     if (mDeviceVersion < angle::vk::kMinimumVulkanAPIVersion)
     {
         WARN() << "ANGLE Requires a minimum Vulkan device version of 1.1";
+        printf("49\n");
         ANGLE_VK_TRY(context, VK_ERROR_INCOMPATIBLE_DRIVER);
+        printf("50\n");
     }
 
     mGarbageCollectionFlushThreshold =
-        static_cast<uint32_t>(mPhysicalDeviceProperties.limits.maxMemoryAllocationCount *
-                              kPercentMaxMemoryAllocationCount);
+            static_cast<uint32_t>(mPhysicalDeviceProperties.limits.maxMemoryAllocationCount *
+                                  kPercentMaxMemoryAllocationCount);
+    printf("51\n");
     vkGetPhysicalDeviceFeatures(mPhysicalDevice, &mPhysicalDeviceFeatures);
+    printf("52\n");
 
-    // Ensure we can find a graphics queue family.
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount, nullptr);
+    printf("53\n");
 
     ANGLE_VK_CHECK(context, queueFamilyCount > 0, VK_ERROR_INITIALIZATION_FAILED);
+    printf("54\n");
 
     mQueueFamilyProperties.resize(queueFamilyCount);
+    printf("55\n");
     vkGetPhysicalDeviceQueueFamilyProperties(mPhysicalDevice, &queueFamilyCount,
                                              mQueueFamilyProperties.data());
+    printf("56\n");
 
     uint32_t queueFamilyMatchCount = 0;
-    // Try first for a protected graphics queue family
     uint32_t firstGraphicsQueueFamily = vk::QueueFamily::FindIndex(
-        mQueueFamilyProperties,
-        (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_PROTECTED_BIT), 0,
-        &queueFamilyMatchCount);
-    // else just a graphics queue family
+            mQueueFamilyProperties,
+            (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_PROTECTED_BIT), 0,
+            &queueFamilyMatchCount);
+    printf("57\n");
+
     if (queueFamilyMatchCount == 0)
     {
         firstGraphicsQueueFamily = vk::QueueFamily::FindIndex(
-            mQueueFamilyProperties, (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT), 0,
-            &queueFamilyMatchCount);
+                mQueueFamilyProperties, (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT), 0,
+                &queueFamilyMatchCount);
+        printf("58\n");
     }
     ANGLE_VK_CHECK(context, queueFamilyMatchCount > 0, VK_ERROR_INITIALIZATION_FAILED);
+    printf("59\n");
 
-    // Store the physical device memory properties so we can find the right memory pools.
     mMemoryProperties.init(mPhysicalDevice);
+    printf("60\n");
     ANGLE_VK_CHECK(context, mMemoryProperties.getMemoryTypeCount() > 0,
                    VK_ERROR_INITIALIZATION_FAILED);
+    printf("61\n");
 
-    // The counters for the memory allocation tracker should be initialized.
-    // Each memory allocation could be made in one of the available memory heaps. We initialize the
-    // per-heap memory allocation trackers for MemoryAllocationType objects here, after
-    // mMemoryProperties has been set up.
     mMemoryAllocationTracker.initMemoryTrackers();
+    printf("62\n");
 
-    // Determine the threshold for pending garbage sizes.
     calculatePendingGarbageSizeLimit();
+    printf("63\n");
 
     ANGLE_TRY(
-        setupDevice(context, featureOverrides, wsiLayer, useVulkanSwapchain, nativeWindowSystem));
+            setupDevice(context, featureOverrides, wsiLayer, useVulkanSwapchain, nativeWindowSystem));
+    printf("64\n");
 
-    // If only one queue family, that's the only choice and the device is initialize with that.  If
-    // there is more than one queue, we still create the device with the first queue family and hope
-    // for the best.  We cannot wait for a window surface to know which supports present because of
-    // EGL_KHR_surfaceless_context or simply pbuffers.  So far, only MoltenVk seems to expose
-    // multiple queue families, and using the first queue family is fine with it.
     ANGLE_TRY(createDeviceAndQueue(context, firstGraphicsQueueFamily));
+    printf("65\n");
 
-    // Initialize the format table.
     mFormatTable.initialize(this, &mNativeTextureCaps);
+    printf("66\n");
 
-    // Null terminate the extension list returned for EGL_VULKAN_INSTANCE_EXTENSIONS_ANGLE.
     mEnabledInstanceExtensions.push_back(nullptr);
+    printf("67\n");
 
     for (vk::ProtectionType protectionType : angle::AllEnums<vk::ProtectionType>())
     {
         mOneOffCommandPoolMap[protectionType].init(protectionType);
+        printf("68\n");
     }
 
-    // Initialize place holder descriptor set layout for empty DescriptorSetLayoutDesc
     ASSERT(!mPlaceHolderDescriptorSetLayout);
     VkDescriptorSetLayoutCreateInfo createInfo = {};
     createInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     createInfo.flags        = 0;
     createInfo.bindingCount = 0;
     createInfo.pBindings    = nullptr;
+    printf("69\n");
 
     mPlaceHolderDescriptorSetLayout = vk::DescriptorSetLayoutPtr::MakeShared(context->getDevice());
+    printf("70\n");
     ANGLE_VK_TRY(context, mPlaceHolderDescriptorSetLayout->init(context->getDevice(), createInfo));
+    printf("71\n");
     ASSERT(mPlaceHolderDescriptorSetLayout->valid());
+    printf("72\n");
 
     return angle::Result::Continue;
 }
+
 
 angle::Result Renderer::initializeMemoryAllocator(vk::ErrorContext *context)
 {
